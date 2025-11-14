@@ -22,7 +22,7 @@ const origin = leaflet.latLng(
 const MAX_ZOOM = 19;
 const CELL_SIZE = 1e-4;
 const SPAWN_AREA = 50;
-const PLAYER_REACH = 0.0003;
+const PLAYER_REACH = 0.0003; // about 30 meters in lat/lng
 const CACHE_SPAWN_PROBABILITY = 0.1;
 
 // configure map
@@ -44,74 +44,106 @@ leaflet
   })
   .addTo(map);
 
-// token data
-const itemList: string[] = [
-  "letter",
-  "word",
-  "clause",
-  "sentence",
-  "paragraph",
-  "paper",
-  "novel",
-  "series",
-];
+// DATA TYPES AND GAME STATE
 
-const emojiList: string[] = [
-  "O",
-  "DO",
-  "DO YOU",
-  "YOU DON'T READ, DO YOU?",
-  "¶",
-  "📄",
-  "📕",
-  "📚",
-];
-
-interface cellItem {
+interface Item {
   name: string;
+  label: string;
   rank: number;
-  location: [i: number, j: number] | null;
 }
 
-// player data
+interface Cell {
+  item: Item | null;
+  location: [i: number, j: number];
+  marker: leaflet.Circle;
+  tooltip: Tooltip;
+}
+
+const allItems: Item[] = [
+  { name: "letter", label: "O", rank: 0 },
+  { name: "word", label: "DO", rank: 1 },
+  { name: "clause", label: "DO YOU", rank: 2 },
+  { name: "sentence", label: "YOU DON'T READ, DO YOU?", rank: 3 },
+  { name: "paragraph", label: "¶", rank: 4 },
+  { name: "paper", label: "📄", rank: 5 },
+  { name: "novel", label: "📕", rank: 6 },
+  { name: "series", label: "📚", rank: 7 },
+];
+
+//const allCells: Cell[] = [];
+
 const playerPos: leaflet.LatLng = origin;
 const playerIcon = leaflet.icon({
   iconUrl: faceImg,
-  iconSize: [78.3, 49.2],
+  iconSize: [78.3, 49.2], // 10% of original img size
 });
 const playerMarker = leaflet.marker(playerPos, { icon: playerIcon });
 playerMarker.addTo(map);
-let playerItem: cellItem | null = null;
-if (playerItem == null) textDiv.innerHTML = "Empty hand :(";
+let playerItem: Item | null = null;
+textDiv.innerHTML = "Empty hand :(";
+
+const actions = {
+  pickUp: (cell: Cell) => {
+    console.log("hold");
+    const item: Item | null = cell.item;
+    playerItem = {
+      name: item!.name,
+      label: item!.label,
+      rank: item!.rank,
+    };
+    cell.item = null;
+    cell.tooltip.setOpacity(0);
+    console.log(playerItem);
+    console.log(cell.item);
+  },
+  placeDown: (cell: Cell) => {
+    console.log("place");
+    const tooltip = cell.tooltip;
+    cell.item = {
+      name: playerItem!.name,
+      label: playerItem!.label,
+      rank: playerItem!.rank,
+    };
+    tooltip.setOpacity(0.9);
+    tooltip.setContent(allItems[cell.item!.rank].label);
+    playerItem = null;
+    console.log(playerItem);
+    console.log(cell.item);
+  },
+  craft: (cell: Cell) => {
+    console.log("craft");
+    cell.tooltip.setOpacity(0);
+    const rank = playerItem!.rank + 1;
+    playerItem = {
+      name: allItems[rank].name,
+      label: allItems[rank].label,
+      rank: rank,
+    };
+    cell.item = null;
+    console.log(playerItem);
+    console.log(cell.item);
+  },
+};
 
 function spawn(i: number, j: number) {
   console.log(i, j);
-  const value = Math.floor(luck([i, j, "initialValue"].toString()) * 9);
-  const item: cellItem = {
-    name: itemList[value],
+  const value = Math.floor(luck([i, j, "initialValue"].toString()) * 5);
+  const item: Item = {
+    name: allItems[value].name,
+    label: allItems[value].label,
     rank: value,
-    location: [i, j],
   };
 
   let opacity: number = 1.0;
   let interactive: boolean = true;
   const distLat = playerPos.lat - (origin.lat + i * CELL_SIZE);
   const distLng = playerPos.lng - (origin.lng + j * CELL_SIZE);
-  if (
-    (distLat > 0 && distLat > PLAYER_REACH) ||
-    (distLat < 0 && distLat < -PLAYER_REACH)
-  ) {
-    opacity = .5;
-    interactive = false;
-  } else if (
-    (distLng > 0 && distLng > PLAYER_REACH) ||
-    (distLng < 0 && distLng < -PLAYER_REACH)
-  ) {
+  if (isFar(distLat) || isFar(distLng)) {
     opacity = .5;
     interactive = false;
   }
 
-  const cell = leaflet.circle([
+  const marker = leaflet.circle([
     origin.lat + i * CELL_SIZE,
     origin.lng + j * CELL_SIZE,
   ], {
@@ -121,45 +153,39 @@ function spawn(i: number, j: number) {
     color: "#2a5596ff",
     interactive: interactive,
   }).addTo(map);
-  cell.bindTooltip(emojiList[value], { direction: "top" });
 
-  cell.addEventListener("click", () => {
-    const tooltip: Tooltip = cell.getTooltip()!;
-    // pick up
-    if (playerItem == null) {
-      playerItem = {
-        name: item.name,
-        rank: item.rank,
-        location: item.location,
-      };
-      item.rank = -1;
-      tooltip.setOpacity(0);
-    } // place down
-    else if (item.rank == -1) {
-      item.name = playerItem.name;
-      item.rank = playerItem.rank;
-      item.location = playerItem.location;
-      tooltip.setOpacity(0.9);
-      tooltip.setContent(emojiList[item.rank]);
-      playerItem = null;
-    } // craft
-    else if (playerItem.rank == value) {
-      tooltip.setOpacity(0);
-      playerItem.name = itemList[value + 1];
-      playerItem.rank = value + 1;
-      item.rank = -1;
-      textDiv.innerHTML = "You win!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
-      return;
-    }
+  marker.bindTooltip(allItems[item.rank].label, { direction: "top" });
+
+  const cell: Cell = {
+    item: item,
+    location: [i, j],
+    marker: marker,
+    tooltip: marker.getTooltip()!,
+  };
+
+  marker.addEventListener("click", () => {
+    if (playerItem == null) actions.pickUp(cell);
+    else if (cell.item == null) actions.placeDown(cell);
+    else if (playerItem.rank == cell.item.rank) actions.craft(cell);
     updateText();
   });
+}
+
+function isFar(degree: number) {
+  return (degree > 0 && degree > PLAYER_REACH) ||
+    (degree < 0 && degree < -PLAYER_REACH);
 }
 
 function updateText() {
   if (playerItem != null) {
     textDiv.innerHTML = `Holding ${playerItem.name} ${
-      emojiList[playerItem.rank]
+      allItems[playerItem.rank].label
     }`;
+    if (playerItem.rank == 4) {
+      textDiv.innerHTML = `You made your first ${
+        allItems[playerItem.rank].label
+      }!!`;
+    }
   } else textDiv.innerHTML = "Empty hands :(";
 }
 

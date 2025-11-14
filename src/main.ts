@@ -54,7 +54,7 @@ interface Item {
 
 interface Cell {
   item: Item | null;
-  location: [i: number, j: number];
+  location: { i: number; j: number };
   marker: leaflet.Circle;
   tooltip: Tooltip;
 }
@@ -183,7 +183,7 @@ for (let i = -SPAWN_AREA; i < SPAWN_AREA; i++) {
 
       const cell: Cell = {
         item: item,
-        location: [i, j],
+        location: { i, j },
         marker: marker,
         tooltip: marker.getTooltip()!,
       };

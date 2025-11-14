@@ -1,4 +1,4 @@
-import leaflet from "leaflet";
+import leaflet, { Tooltip } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "./_leafletWorkaround.ts";
 import luck from "./_luck.ts";
@@ -55,6 +55,7 @@ const itemList: string[] = [
   "novel",
   "series",
 ];
+
 const emojiList: string[] = [
   "O",
   "DO",
@@ -65,6 +66,7 @@ const emojiList: string[] = [
   "📕",
   "📚",
 ];
+
 interface cellItem {
   name: string;
   rank: number;
@@ -83,7 +85,8 @@ let playerItem: cellItem | null = null;
 if (playerItem == null) textDiv.innerHTML = "Empty hand :(";
 
 function spawn(i: number, j: number) {
-  const value = Math.floor(luck([i, j, "initialValue"].toString()) * 8);
+  console.log(i, j);
+  const value = Math.floor(luck([i, j, "initialValue"].toString()) * 9);
   const item: cellItem = {
     name: itemList[value],
     rank: value,
@@ -121,6 +124,7 @@ function spawn(i: number, j: number) {
   cell.bindTooltip(emojiList[value], { direction: "top" });
 
   cell.addEventListener("click", () => {
+    const tooltip: Tooltip = cell.getTooltip()!;
     // pick up
     if (playerItem == null) {
       playerItem = {
@@ -129,33 +133,34 @@ function spawn(i: number, j: number) {
         location: item.location,
       };
       item.rank = -1;
-      cell.getTooltip()!.setOpacity(0);
+      tooltip.setOpacity(0);
     } // place down
-    else if (item.rank == -1 && playerItem != null) {
+    else if (item.rank == -1) {
       item.name = playerItem.name;
       item.rank = playerItem.rank;
       item.location = playerItem.location;
-      cell.getTooltip()!.setOpacity(0.9);
-      cell.getTooltip()!.setContent(emojiList[item.rank]);
+      tooltip.setOpacity(0.9);
+      tooltip.setContent(emojiList[item.rank]);
       playerItem = null;
     } // craft
     else if (playerItem.rank == value) {
-      cell.getTooltip()!.setOpacity(0);
+      tooltip.setOpacity(0);
       playerItem.name = itemList[value + 1];
       playerItem.rank = value + 1;
       item.rank = -1;
       textDiv.innerHTML = "You win!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
       return;
     }
-    // update text
-    if (playerItem != null) {
-      textDiv.innerHTML = `Holding ${playerItem.name} ${
-        emojiList[playerItem.rank]
-      }`;
-    } else {
-      textDiv.innerHTML = "Empty hands :(";
-    }
+    updateText();
   });
+}
+
+function updateText() {
+  if (playerItem != null) {
+    textDiv.innerHTML = `Holding ${playerItem.name} ${
+      emojiList[playerItem.rank]
+    }`;
+  } else textDiv.innerHTML = "Empty hands :(";
 }
 
 // spawn caches

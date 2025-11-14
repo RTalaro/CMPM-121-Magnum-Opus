@@ -7,9 +7,9 @@ Collect components by clicking on nearby cells. Craft by clicking a cell of the 
 
 ## Technologies
 
-- game source: TypeScript, HTML, CSS
-- build: Deno and Vite for building
-- automated deployment: GitHub Actions + GitHub Pages
+- Game Source: TypeScript, HTML, CSS
+- Build: Deno and Vite for building
+- Automated Deployment: GitHub Actions + GitHub Pages
 
 ## Assignments
 

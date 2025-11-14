@@ -1,9 +1,10 @@
-# D3: Fuse Me
+# D3: Magnum Opus
 
 ## Game Design Vision
 
-In this game, the player will gather literary components in the pursuit of developing a collection of works.
+In this game, the player will gather literary components in the pursuit of developing their magnum opus.
 Collect components by clicking on nearby cells. Craft by clicking a cell of the same type as the equipped component.
+I hope that the player can craft their own narrative by exploring, and feel inspired to create as they like, in whichever medium they like.
 
 ## Technologies
 

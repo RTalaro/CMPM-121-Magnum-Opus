@@ -1,3 +1,5 @@
-# CMPM 121 D3 Project
+# CMPM 121 Magnum Opus
 
-This is the starting point for your CMPM 121 D3 project. Students should make sure to remove _this_ content from their README.md file and replace it with their own project documentation.
+This project is a kind of idealic solution to the common fear many writers (including students) frequently face in their day-to-day lives. The remedy is as simple as writing letter by letter, word by word, sentence by sentence, until maybe eventually, they look up and find they've finished an entire series worth of literature.
+But like I said, this is the idealic solution.
+In here, you can find inspiration across landscapes, and achieve that end. I hope you can.

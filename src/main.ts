@@ -6,6 +6,8 @@ import "./style.css";
 
 import faceImg from "./face.png";
 
+document.title = "Magnum Opus";
+
 const mapDiv = document.createElement("div");
 mapDiv.id = "map";
 document.body.append(mapDiv);

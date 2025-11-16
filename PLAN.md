@@ -41,6 +41,7 @@ I hope that the player can craft their own narrative by exploring, and feel insp
 - [x] spawn a word
 - [x] implement combination of letters to create word
 - [x] implement win state upon making a word
+- [x] refactor + cleanup
 
 ### D4.b Globe-spanning Gameplay
 
@@ -59,6 +60,7 @@ I hope that the player can craft their own narrative by exploring, and feel insp
 - [ ] spawn cells as they come into view
 - [x] display cell coordinates relative to Null Island
 - [x] implement win state upon crafting highest ranked item
+- [ ] refactor + cleanup
 
 ### D4.c Object Persistence
 
@@ -70,3 +72,4 @@ I hope that the player can craft their own narrative by exploring, and feel insp
 - [ ] save cells that have been modified
 - [ ] free cells which are out of view
 - [ ] free cells which have not been modified
+- [ ] refactor + cleanup

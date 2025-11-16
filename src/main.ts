@@ -6,6 +6,8 @@ import "./style.css";
 
 import faceImg from "./face.png";
 
+// DOM
+
 document.title = "Magnum Opus";
 
 const mapDiv = document.createElement("div");
@@ -16,7 +18,56 @@ const textDiv = document.createElement("div");
 textDiv.id = "text";
 document.body.append(textDiv);
 
-const origin = leaflet.latLng(
+const upDiv = document.createElement("div");
+document.body.append(upDiv);
+const up = document.createElement("button");
+up.id = "up";
+up.textContent = "⬆";
+
+const left = document.createElement("button");
+left.id = "left";
+left.textContent = "⬅";
+const down = document.createElement("button");
+down.id = "down";
+down.textContent = "⬇︎";
+const right = document.createElement("button");
+right.id = "right";
+right.textContent = "➡";
+
+const allButtons: HTMLButtonElement[] = [up, left, down, right];
+for (const button of allButtons) {
+  document.body.append(button);
+  if (button.id == "up") {
+    const buttonsDiv = document.createElement("div");
+    document.body.append(buttonsDiv);
+  }
+  button.addEventListener("click", () => {
+    const lat = 0.00017137304;
+    const lng = 0.00021457672;
+    switch (button.id) {
+      case "up":
+        playerPos.lat += lat;
+        break;
+      case "down":
+        playerPos.lat -= lat;
+        break;
+      case "left":
+        playerPos.lng -= lng;
+        break;
+      case "right":
+        playerPos.lng += lng;
+        break;
+      default:
+        return;
+    }
+    playerMarker.setLatLng(playerPos);
+    map.setView(playerPos);
+    displayCells();
+  });
+}
+
+const origin = leaflet.latLng(0, 0);
+const start_pos = leaflet.latLng(
   36.997936938057016,
   -122.05703507501151,
 );
@@ -37,7 +88,7 @@ const map = leaflet.map(mapDiv, {
   scrollWheelZoom: true,
 });
 
-// background map
+// display map
 leaflet
   .tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: MAX_ZOOM,
@@ -56,7 +107,7 @@ interface Item {
 
 interface Cell {
   item: Item | null;
-  location: { i: number; j: number };
+  location: leaflet.LatLng;
   marker: leaflet.Circle;
   tooltip: Tooltip;
 }
@@ -74,7 +125,8 @@ const allItems: Item[] = [
 
 //const allCells: Cell[] = [];
 
-const playerPos: leaflet.LatLng = origin;
+const FINAL_ITEM: string = "series";
+let playerPos: leaflet.LatLng = start_pos;
 const playerIcon = leaflet.icon({
   iconUrl: faceImg,
   iconSize: [78.3, 49.2], // 10% of original img size
@@ -86,7 +138,6 @@ textDiv.innerHTML = "Empty hand :(";
 
 const actions = {
   pickUp: (cell: Cell) => {
-    console.log("hold");
     const item: Item | null = cell.item;
     playerItem = {
       name: item!.name,
@@ -95,11 +146,8 @@ const actions = {
     };
     cell.item = null;
     cell.tooltip.setOpacity(0);
-    console.log(playerItem);
-    console.log(cell.item);
   },
   placeDown: (cell: Cell) => {
-    console.log("place");
     const tooltip = cell.tooltip;
     cell.item = {
       name: playerItem!.name,
@@ -107,13 +155,14 @@ const actions = {
       rank: playerItem!.rank,
     };
     tooltip.setOpacity(0.9);
-    tooltip.setContent(allItems[cell.item!.rank].label);
+    tooltip.setContent(
+      `${
+        allItems[cell.item.rank].label
+      } <br> (${cell.location.lat}, ${cell.location.lng})`,
+    );
     playerItem = null;
-    console.log(playerItem);
-    console.log(cell.item);
   },
   craft: (cell: Cell) => {
-    console.log("craft");
     cell.tooltip.setOpacity(0);
     const rank = playerItem!.rank + 1;
     playerItem = {
@@ -122,14 +171,12 @@ const actions = {
       rank: rank,
     };
     cell.item = null;
-    console.log(playerItem);
-    console.log(cell.item);
   },
 };
 
-function spawn(i: number, j: number) {
-  console.log(i, j);
-  const value = Math.floor(luck([i, j, "initialValue"].toString()) * 5);
+function spawn(lat: number, lng: number) {
+  console.log(lat, lng);
+  const value = Math.floor(luck([lat, lng, "initialValue"].toString()) * 5);
   const item: Item = {
     name: allItems[value].name,
     label: allItems[value].label,
@@ -138,17 +185,12 @@ function spawn(i: number, j: number) {
   return item;
 }
 
-function isFar(degree: number) {
-  return (degree > 0 && degree > PLAYER_REACH) ||
-    (degree < 0 && degree < -PLAYER_REACH);
-}
-
 function updateText() {
   if (playerItem != null) {
     textDiv.innerHTML = `Holding ${playerItem.name} ${
       allItems[playerItem.rank].label
     }`;
-    if (playerItem.rank == 4) {
+    if (playerItem.name == FINAL_ITEM) {
       textDiv.innerHTML = `You made your first ${
         allItems[playerItem.rank].label
       }!!`;
@@ -157,22 +199,24 @@ function updateText() {
 }
 
 // spawn and display cells
-for (let i = -SPAWN_AREA; i < SPAWN_AREA; i++) {
-  for (let j = -SPAWN_AREA; j < SPAWN_AREA; j++) {
-    if (luck([i, j].toString()) < CACHE_SPAWN_PROBABILITY) {
-      const item = spawn(i, j);
+for (let lat = -SPAWN_AREA; lat < SPAWN_AREA; lat++) {
+  for (let lng = -SPAWN_AREA; lng < SPAWN_AREA; lng++) {
+    if (luck([lat, lng].toString()) < CACHE_SPAWN_PROBABILITY) {
+      const item = spawn(lat, lng);
       let opacity: number = 1.0;
       let interactive: boolean = true;
-      const distLat = playerPos.lat - (origin.lat + i * CELL_SIZE);
-      const distLng = playerPos.lng - (origin.lng + j * CELL_SIZE);
-      if (isFar(distLat) || isFar(distLng)) {
+      const location: leaflet.LatLng = leaflet.latLng([
+        start_pos.lat + lat * CELL_SIZE,
+        start_pos.lng + lng * CELL_SIZE,
+      ]);
+      if (map.distance(location, playerPos) * .00001 > PLAYER_REACH) {
         opacity = .5;
         interactive = false;
       }
 
       const marker = leaflet.circle([
-        origin.lat + i * CELL_SIZE,
-        origin.lng + j * CELL_SIZE,
+        start_pos.lat + lat * CELL_SIZE,
+        start_pos.lng + lng * CELL_SIZE,
       ], {
         radius: 5,
         opacity: opacity,
@@ -181,11 +225,14 @@ for (let i = -SPAWN_AREA; i < SPAWN_AREA; i++) {
         interactive: interactive,
       }).addTo(map);
 
-      marker.bindTooltip(allItems[item.rank].label, { direction: "top" });
+      marker.bindTooltip(
+        `${allItems[item.rank].label} <br> (${location.lat}, ${location.lng})`,
+        { direction: "top" },
+      );
 
       const cell: Cell = {
         item: item,
-        location: { i, j },
+        location: location,
         marker: marker,
         tooltip: marker.getTooltip()!,
       };
@@ -199,3 +246,15 @@ for (let i = -SPAWN_AREA; i < SPAWN_AREA; i++) {
     }
   }
 }
+
+map.addEventListener("moveend", () => {
+  playerPos = map.getCenter();
+  console.log(playerPos);
+  playerMarker.setLatLng(playerPos);
+  displayCells();
+});
+
+function displayCells() {
+}
+
+map.setView(start_pos);

@@ -1,12 +1,14 @@
-#controlPanel {
-  padding: 1rem;
-}
-
-#statusPanel {
-  padding: 1rem;
+body {
+  text-align: center;
 }
 
 #map {
   width: 100%;
   height: 80vh;
+}
+
+#text {
+  font-family:
+    "Lucida Sans", "Lucida Sans Regular", "Lucida Grande",
+    "Lucida Sans Unicode", Geneva, Verdana, sans-serif;
 }

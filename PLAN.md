@@ -54,17 +54,19 @@ I hope that the player can craft their own narrative by exploring, and feel insp
 
 #### D4.b Steps
 
-- [ ] simulate player movement by clicking
+- [x] simulate player movement with buttons
 - [ ] kill cells that are out of view
-- [ ] regenerate cells as they come into view
-- [ ] display cell coordinates relative to Null Island
-- [ ] implement win state upon crafting highest ranked item
-- [ ]
-- [ ]
-- [ ]
-- [ ]
-- [ ]
-- [ ]
-- [ ]
-- [ ]
-- [ ]
+- [ ] spawn cells as they come into view
+- [x] display cell coordinates relative to Null Island
+- [x] implement win state upon crafting highest ranked item
+
+### D4.c Object Persistence
+
+- **Map**
+  - Save memory by freeing cells which are out of view and unchanged
+
+#### D4.c Steps
+
+- [ ] save cells that have been modified
+- [ ] free cells which are out of view
+- [ ] free cells which have not been modified

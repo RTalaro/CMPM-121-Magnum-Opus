@@ -175,7 +175,7 @@ const actions = {
 };
 
 function spawn(lat: number, lng: number) {
-  console.log(lat, lng);
+  console.log("spawn", lat, lng);
   const value = Math.floor(luck([lat, lng, "initialValue"].toString()) * 5);
   const item: Item = {
     name: allItems[value].name,
@@ -199,53 +199,6 @@ function updateText() {
 }
 
 // spawn and display cells
-for (let lat = -SPAWN_AREA; lat < SPAWN_AREA; lat++) {
-  for (let lng = -SPAWN_AREA; lng < SPAWN_AREA; lng++) {
-    if (luck([lat, lng].toString()) < CACHE_SPAWN_PROBABILITY) {
-      const item = spawn(lat, lng);
-      let opacity: number = 1.0;
-      let interactive: boolean = true;
-      const location: leaflet.LatLng = leaflet.latLng([
-        start_pos.lat + lat * CELL_SIZE,
-        start_pos.lng + lng * CELL_SIZE,
-      ]);
-      if (map.distance(location, playerPos) * .00001 > PLAYER_REACH) {
-        opacity = .5;
-        interactive = false;
-      }
-
-      const marker = leaflet.circle([
-        start_pos.lat + lat * CELL_SIZE,
-        start_pos.lng + lng * CELL_SIZE,
-      ], {
-        radius: 5,
-        opacity: opacity,
-        weight: 2.5,
-        color: "#2a5596ff",
-        interactive: interactive,
-      }).addTo(map);
-
-      marker.bindTooltip(
-        `${allItems[item.rank].label} <br> (${location.lat}, ${location.lng})`,
-        { direction: "top" },
-      );
-
-      const cell: Cell = {
-        item: item,
-        location: location,
-        marker: marker,
-        tooltip: marker.getTooltip()!,
-      };
-
-      marker.addEventListener("click", () => {
-        if (playerItem == null) actions.pickUp(cell);
-        else if (cell.item == null) actions.placeDown(cell);
-        else if (playerItem.rank == cell.item.rank) actions.craft(cell);
-        updateText();
-      });
-    }
-  }
-}
 
 map.addEventListener("moveend", () => {
   playerPos = map.getCenter();
@@ -254,7 +207,58 @@ map.addEventListener("moveend", () => {
   displayCells();
 });
 
+const cellGrid = leaflet.layerGroup();
 function displayCells() {
+  cellGrid.clearLayers();
+  const bounds: leaflet.LatLngBounds = map.getBounds();
+  console.log("bounds", bounds);
+  for (let lat = -SPAWN_AREA; lat < SPAWN_AREA; lat++) {
+    for (let lng = -SPAWN_AREA; lng < SPAWN_AREA; lng++) {
+      if (luck([lat, lng].toString()) < CACHE_SPAWN_PROBABILITY) {
+        const item = spawn(lat, lng);
+        let opacity: number = 1.0;
+        let interactive: boolean = true;
+        const location: leaflet.LatLng = leaflet.latLng([
+          start_pos.lat + lat * CELL_SIZE,
+          start_pos.lng + lng * CELL_SIZE,
+        ]);
+        if (map.distance(location, playerPos) * .00001 > PLAYER_REACH) {
+          opacity = .5;
+          interactive = false;
+        }
+
+        const marker = leaflet.circle(location, {
+          radius: 5,
+          opacity: opacity,
+          weight: 2.5,
+          color: "#2a5596ff",
+          interactive: interactive,
+        }).addTo(cellGrid);
+
+        marker.bindTooltip(
+          `${
+            allItems[item.rank].label
+          } <br> (${location.lat}, ${location.lng})`,
+          { direction: "top" },
+        );
+
+        const cell: Cell = {
+          item: item,
+          location: location,
+          marker: marker,
+          tooltip: marker.getTooltip()!,
+        };
+
+        marker.addEventListener("click", () => {
+          if (playerItem == null) actions.pickUp(cell);
+          else if (cell.item == null) actions.placeDown(cell);
+          else if (playerItem.rank == cell.item.rank) actions.craft(cell);
+          updateText();
+        });
+      }
+    }
+  }
+  cellGrid.addTo(map);
 }
 
 map.setView(start_pos);

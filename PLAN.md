@@ -56,8 +56,8 @@ I hope that the player can craft their own narrative by exploring, and feel insp
 #### D4.b Steps
 
 - [x] simulate player movement with buttons
-- [ ] kill cells that are out of view
 - [ ] spawn cells as they come into view
+- [ ] kill cells that are out of view
 - [x] display cell coordinates relative to Null Island
 - [x] implement win state upon crafting highest ranked item
 - [ ] refactor + cleanup

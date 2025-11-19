@@ -34,6 +34,8 @@ const right = document.createElement("button");
 right.id = "right";
 right.textContent = "➡";
 
+const latMov = 0.00017137304;
+const lngMov = 0.00021457672;
 const allButtons: HTMLButtonElement[] = [up, left, down, right];
 for (const button of allButtons) {
   document.body.append(button);
@@ -42,20 +44,18 @@ for (const button of allButtons) {
     document.body.append(buttonsDiv);
   }
   button.addEventListener("click", () => {
-    const lat = 0.00017137304;
-    const lng = 0.00021457672;
     switch (button.id) {
       case "up":
-        playerPos.lat += lat;
+        playerPos.lat += latMov;
         break;
       case "down":
-        playerPos.lat -= lat;
+        playerPos.lat -= latMov;
         break;
       case "left":
-        playerPos.lng -= lng;
+        playerPos.lng -= lngMov;
         break;
       case "right":
-        playerPos.lng += lng;
+        playerPos.lng += lngMov;
         break;
       default:
         return;
@@ -136,7 +136,8 @@ playerMarker.addTo(map);
 let playerItem: Item | null = null;
 textDiv.innerHTML = "Empty hand :(";
 
-const actions = {
+type Action = (cell: Cell) => void;
+const actions: Record<string, Action> = {
   pickUp: (cell: Cell) => {
     const item: Item | null = cell.item;
     playerItem = {
@@ -302,12 +303,7 @@ function displayCells() {
           marker.addTo(cellGrid);
         } else marker.removeFrom(map);
 
-        marker.addEventListener("click", () => {
-          if (playerItem == null) actions.pickUp(cell);
-          else if (cell.item == null) actions.placeDown(cell);
-          else if (playerItem.rank == cell.item.rank) actions.craft(cell);
-          updateText();
-        });
+        onCellClick(cell);
       }
     }
   }
@@ -315,6 +311,15 @@ function displayCells() {
     cell.marker.addTo(cellGrid);
   }
   cellGrid.addTo(map);
+}
+
+function onCellClick(cell: Cell) {
+  cell.marker.addEventListener("click", () => {
+    if (playerItem == null) actions.pickUp(cell);
+    else if (cell.item == null) actions.placeDown(cell);
+    else if (playerItem.rank == cell.item.rank) actions.craft(cell);
+    updateText();
+  });
 }
 
 map.setView(start_pos);

@@ -67,11 +67,10 @@ I hope that the player can craft their own narrative by exploring, and feel insp
 ### D4.c Object Persistence
 
 - **Map**
-  - Save memory by freeing cells which are out of view and unchanged
+  - Save memory by freeing cells which are out of view and untouched
 
 #### D4.c Steps
 
 - [ ] save cells that have been modified
-- [ ] free cells which are out of view
-- [ ] free cells which have not been modified
+- [ ] free cells that are out of view and have not been modified
 - [ ] refactor + cleanup

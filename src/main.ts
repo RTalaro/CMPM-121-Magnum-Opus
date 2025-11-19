@@ -208,7 +208,9 @@ map.addEventListener("moveend", () => {
 function killOldCells() {
   for (const cell of visibleCells) {
     if (isOffMap(cell.location)) {
-      visibleCells = visibleCells.filter((item) => item !== cell);
+      if (!isModified(cell)) {
+        visibleCells = visibleCells.filter((item) => item !== cell);
+      }
       cell.marker.removeFrom(map);
     } else if (map.distance(cell.location, playerPos) * .00001 > PLAYER_REACH) {
       cell.marker.setStyle({ opacity: .5, interactive: false });
@@ -219,6 +221,18 @@ function killOldCells() {
       cell.marker.redraw();
     }
   }
+  console.log("after filter,", visibleCells);
+}
+
+function isModified(cell: Cell) {
+  if (cell.item == null) return false;
+  const origRank: number = Math.floor(
+    luck(
+      [cell.location.lat, cell.location.lng, "initialValue"].toString(),
+    ) * 5,
+  );
+  const currRank: number = cell.item!.rank;
+  return origRank == currRank;
 }
 
 const cellGrid = leaflet.layerGroup();

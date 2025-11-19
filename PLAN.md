@@ -57,7 +57,8 @@ I hope that the player can craft their own narrative by exploring, and feel insp
 
 - [x] simulate player movement with buttons
 - [x] redraw cells after every move
-- [ ] spawn cells as they come into view
+- [x] spawn cells as they come into view
+- [ ] save cells that are in view
 - [ ] kill cells that are out of view
 - [x] display cell coordinates relative to Null Island
 - [x] implement win state upon crafting highest ranked item

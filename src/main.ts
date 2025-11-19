@@ -74,7 +74,7 @@ const start_pos = leaflet.latLng(
 
 const MAX_ZOOM = 19;
 const CELL_SIZE = 1e-4;
-const SPAWN_AREA = 50;
+const SPAWN_AREA = 1e6;
 const PLAYER_REACH = 0.0003; // about 30 meters in lat/lng
 const CACHE_SPAWN_PROBABILITY = 0.1;
 
@@ -123,7 +123,7 @@ const allItems: Item[] = [
   { name: "series", label: "📚", rank: 7 },
 ];
 
-//const allCells: Cell[] = [];
+let visibleCells: Cell[] = [];
 
 const FINAL_ITEM: string = "series";
 let playerPos: leaflet.LatLng = start_pos;
@@ -204,16 +204,48 @@ map.addEventListener("moveend", () => {
   playerPos = map.getCenter();
   console.log(playerPos);
   playerMarker.setLatLng(playerPos);
+  killOldCells();
   displayCells();
 });
+
+function killOldCells() {
+  const bounds: leaflet.LatLngBounds = map.getBounds();
+  for (const cell of visibleCells) {
+    const isFarLat = (cell.location.lat < bounds.getSouth()) ||
+      (cell.location.lat > bounds.getNorth());
+    const isFarLng = (cell.location.lng < bounds.getWest()) ||
+      (cell.location.lng > bounds.getEast());
+    if (isFarLat || isFarLng) {
+      visibleCells = visibleCells.filter((item) => item !== cell);
+      cell.marker.removeFrom(map);
+    } else if (map.distance(cell.location, playerPos) * .00001 > PLAYER_REACH) {
+      cell.marker.setStyle({ opacity: .5, interactive: false });
+      cell.marker.redraw();
+    } else {
+      cell.marker.setStyle({ opacity: 1.0, interactive: true });
+      cell.marker.bindTooltip(cell.tooltip);
+      cell.marker.redraw();
+    }
+  }
+}
 
 const cellGrid = leaflet.layerGroup();
 function displayCells() {
   cellGrid.clearLayers();
+  if (map.getZoom() < 18) return;
   const bounds: leaflet.LatLngBounds = map.getBounds();
-  console.log("bounds", bounds);
+
   for (let lat = -SPAWN_AREA; lat < SPAWN_AREA; lat++) {
+    if (
+      (start_pos.lat + lat * CELL_SIZE < bounds.getSouth()) ||
+      (start_pos.lat + lat * CELL_SIZE > bounds.getNorth())
+    ) continue;
     for (let lng = -SPAWN_AREA; lng < SPAWN_AREA; lng++) {
+      if (
+        (start_pos.lng + lng * CELL_SIZE < bounds.getWest()) ||
+        (start_pos.lng + lng * CELL_SIZE > bounds.getEast())
+      ) continue;
+
       if (luck([lat, lng].toString()) < CACHE_SPAWN_PROBABILITY) {
         const item = spawn(lat, lng);
         let opacity: number = 1.0;
@@ -222,6 +254,18 @@ function displayCells() {
           start_pos.lat + lat * CELL_SIZE,
           start_pos.lng + lng * CELL_SIZE,
         ]);
+        // if already visible, move on
+        let cont = true;
+        for (const cell of visibleCells) {
+          if (
+            cell.location.lat == location.lat &&
+            cell.location.lng == location.lng
+          ) {
+            cont = false;
+            break;
+          }
+        }
+        if (!cont) continue;
         if (map.distance(location, playerPos) * .00001 > PLAYER_REACH) {
           opacity = .5;
           interactive = false;
@@ -233,7 +277,7 @@ function displayCells() {
           weight: 2.5,
           color: "#2a5596ff",
           interactive: interactive,
-        }).addTo(cellGrid);
+        });
 
         marker.bindTooltip(
           `${
@@ -249,6 +293,15 @@ function displayCells() {
           tooltip: marker.getTooltip()!,
         };
 
+        if (
+          !(visibleCells.some((visibleCells) =>
+            visibleCells.location === location
+          ))
+        ) {
+          visibleCells.push(cell);
+          marker.addTo(cellGrid);
+        } else marker.removeFrom(map);
+
         marker.addEventListener("click", () => {
           if (playerItem == null) actions.pickUp(cell);
           else if (cell.item == null) actions.placeDown(cell);
@@ -257,6 +310,9 @@ function displayCells() {
         });
       }
     }
+  }
+  for (const cell of visibleCells) {
+    cell.marker.addTo(cellGrid);
   }
   cellGrid.addTo(map);
 }

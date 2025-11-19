@@ -125,7 +125,7 @@ const allItems: Item[] = [
 
 let visibleCells: Cell[] = [];
 
-const FINAL_ITEM: string = "series";
+const FINAL_ITEM: string = "paper";
 let playerPos: leaflet.LatLng = start_pos;
 const playerIcon = leaflet.icon({
   iconUrl: faceImg,
@@ -176,7 +176,6 @@ const actions: Record<string, Action> = {
 };
 
 function spawn(lat: number, lng: number) {
-  console.log("spawn", lat, lng);
   const value = Math.floor(luck([lat, lng, "initialValue"].toString()) * 5);
   const item: Item = {
     name: allItems[value].name,
@@ -192,9 +191,7 @@ function updateText() {
       allItems[playerItem.rank].label
     }`;
     if (playerItem.name == FINAL_ITEM) {
-      textDiv.innerHTML = `You made your first ${
-        allItems[playerItem.rank].label
-      }!!`;
+      textDiv.innerHTML = `You wrote a ${allItems[playerItem.rank].label}!!`;
     }
   } else textDiv.innerHTML = "Empty hands :(";
 }
@@ -203,7 +200,6 @@ function updateText() {
 
 map.addEventListener("moveend", () => {
   playerPos = map.getCenter();
-  console.log(playerPos);
   playerMarker.setLatLng(playerPos);
   killOldCells();
   displayCells();

@@ -125,7 +125,7 @@ const allItems: Item[] = [
 
 let visibleCells: Cell[] = [];
 
-const FINAL_ITEM: string = "paper";
+const FINAL_ITEM: string = "series";
 let playerPos: leaflet.LatLng = start_pos;
 const playerIcon = leaflet.icon({
   iconUrl: faceImg,
@@ -176,7 +176,7 @@ const actions: Record<string, Action> = {
 };
 
 function spawn(lat: number, lng: number) {
-  const value = Math.floor(luck([lat, lng, "initialValue"].toString()) * 5);
+  const value = Math.floor(luck([lat, lng, "initialValue"].toString()) * 8);
   const item: Item = {
     name: allItems[value].name,
     label: allItems[value].label,
@@ -208,7 +208,9 @@ map.addEventListener("moveend", () => {
 function killOldCells() {
   for (const cell of visibleCells) {
     if (isOffMap(cell.location)) {
-      visibleCells = visibleCells.filter((item) => item !== cell);
+      if (!isModified(cell)) {
+        visibleCells = visibleCells.filter((item) => item !== cell);
+      }
       cell.marker.removeFrom(map);
     } else if (map.distance(cell.location, playerPos) * .00001 > PLAYER_REACH) {
       cell.marker.setStyle({ opacity: .5, interactive: false });
@@ -219,6 +221,18 @@ function killOldCells() {
       cell.marker.redraw();
     }
   }
+  console.log("after filter,", visibleCells);
+}
+
+function isModified(cell: Cell) {
+  if (cell.item == null) return false;
+  const origRank: number = Math.floor(
+    luck(
+      [cell.location.lat, cell.location.lng, "initialValue"].toString(),
+    ) * 5,
+  );
+  const currRank: number = cell.item!.rank;
+  return origRank == currRank;
 }
 
 const cellGrid = leaflet.layerGroup();

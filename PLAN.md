@@ -71,6 +71,6 @@ I hope that the player can craft their own narrative by exploring, and feel insp
 
 #### D4.c Steps
 
-- [x] save cells that have been modified
-- [x] free cells that are out of view and have not been modified
+- [ ] save cells that have been modified
+- [ ] free cells that are out of view and have not been modified
 - [ ] refactor + cleanup

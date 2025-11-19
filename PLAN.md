@@ -62,7 +62,7 @@ I hope that the player can craft their own narrative by exploring, and feel insp
 - [x] kill cells that are out of view
 - [x] display cell coordinates relative to Null Island
 - [x] implement win state upon crafting highest ranked item
-- [ ] refactor + cleanup
+- [x] refactor + cleanup
 
 ### D4.c Object Persistence
 

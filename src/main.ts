@@ -210,13 +210,8 @@ map.addEventListener("moveend", () => {
 });
 
 function killOldCells() {
-  const bounds: leaflet.LatLngBounds = map.getBounds();
   for (const cell of visibleCells) {
-    const isFarLat = (cell.location.lat < bounds.getSouth()) ||
-      (cell.location.lat > bounds.getNorth());
-    const isFarLng = (cell.location.lng < bounds.getWest()) ||
-      (cell.location.lng > bounds.getEast());
-    if (isFarLat || isFarLng) {
+    if (isOffMap(cell.location)) {
       visibleCells = visibleCells.filter((item) => item !== cell);
       cell.marker.removeFrom(map);
     } else if (map.distance(cell.location, playerPos) * .00001 > PLAYER_REACH) {
@@ -247,70 +242,88 @@ function displayCells() {
         (start_pos.lng + lng * CELL_SIZE > bounds.getEast())
       ) continue;
 
-      if (luck([lat, lng].toString()) < CACHE_SPAWN_PROBABILITY) {
-        const item = spawn(lat, lng);
-        let opacity: number = 1.0;
-        let interactive: boolean = true;
-        const location: leaflet.LatLng = leaflet.latLng([
-          start_pos.lat + lat * CELL_SIZE,
-          start_pos.lng + lng * CELL_SIZE,
-        ]);
-        // if already visible, move on
-        let cont = true;
-        for (const cell of visibleCells) {
-          if (
-            cell.location.lat == location.lat &&
-            cell.location.lng == location.lng
-          ) {
-            cont = false;
-            break;
-          }
-        }
-        if (!cont) continue;
-        if (map.distance(location, playerPos) * .00001 > PLAYER_REACH) {
-          opacity = .5;
-          interactive = false;
-        }
-
-        const marker = leaflet.circle(location, {
-          radius: 5,
-          opacity: opacity,
-          weight: 2.5,
-          color: "#2a5596ff",
-          interactive: interactive,
-        });
-
-        marker.bindTooltip(
-          `${
-            allItems[item.rank].label
-          } <br> (${location.lat}, ${location.lng})`,
-          { direction: "top" },
-        );
-
-        const cell: Cell = {
-          item: item,
-          location: location,
-          marker: marker,
-          tooltip: marker.getTooltip()!,
-        };
-
+      if (luck([lat, lng].toString()) >= CACHE_SPAWN_PROBABILITY) continue;
+      const item = spawn(lat, lng);
+      let opacity: number = 1.0;
+      let interactive: boolean = true;
+      const location: leaflet.LatLng = leaflet.latLng([
+        start_pos.lat + lat * CELL_SIZE,
+        start_pos.lng + lng * CELL_SIZE,
+      ]);
+      let cont = true;
+      for (const cell of visibleCells) {
         if (
-          !(visibleCells.some((visibleCells) =>
-            visibleCells.location === location
-          ))
+          cell.location.lat == location.lat &&
+          cell.location.lng == location.lng
         ) {
-          visibleCells.push(cell);
-          marker.addTo(cellGrid);
-        } else marker.removeFrom(map);
-
-        onCellClick(cell);
+          cont = false;
+          break;
+        }
       }
+      if (!cont) continue;
+      else if (map.distance(location, playerPos) * .00001 > PLAYER_REACH) {
+        opacity = .5;
+        interactive = false;
+      }
+
+      const marker = createMarker(location, opacity, interactive, item);
+      const cell: Cell = {
+        item: item,
+        location: location,
+        marker: marker,
+        tooltip: marker.getTooltip()!,
+      };
+
+      updateCellVisibility(cell);
+      onCellClick(cell);
     }
   }
+
   for (const cell of visibleCells) {
     cell.marker.addTo(cellGrid);
   }
   cellGrid.addTo(map);
+}
+
+function isOffMap(location: leaflet.LatLng) {
+  const bounds = map.getBounds();
+  const isFarLat = (location.lat < bounds.getSouth()) ||
+    (location.lat > bounds.getNorth());
+  const isFarLng = (location.lng < bounds.getWest()) ||
+    (location.lng > bounds.getEast());
+  return (isFarLat || isFarLng);
+}
+
+function createMarker(
+  location: leaflet.LatLng,
+  opacity: number,
+  interactive: boolean,
+  item: Item,
+) {
+  const marker = leaflet.circle(location, {
+    radius: 5,
+    opacity: opacity,
+    weight: 2.5,
+    color: "#2a5596ff",
+    interactive: interactive,
+  });
+
+  marker.bindTooltip(
+    `${allItems[item.rank].label} <br> (${location.lat}, ${location.lng})`,
+    { direction: "top" },
+  );
+  return marker;
+}
+
+function updateCellVisibility(cell: Cell) {
+  if (
+    !(visibleCells.some((visibleCells) =>
+      visibleCells.location === cell.location
+    ))
+  ) {
+    visibleCells.push(cell);
+    cell.marker.addTo(cellGrid);
+  } else cell.marker.removeFrom(map);
 }
 
 function onCellClick(cell: Cell) {

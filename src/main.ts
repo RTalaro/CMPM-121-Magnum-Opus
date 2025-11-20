@@ -99,20 +99,20 @@ leaflet
 
 // DATA TYPES AND GAME STATE
 
-interface Item {
+interface ItemFlyweight {
   name: string;
   label: string;
   rank: number;
 }
 
 interface Cell {
-  item: Item | null;
+  item: ItemFlyweight | null;
   location: leaflet.LatLng;
   marker: leaflet.Circle;
   tooltip: Tooltip;
 }
 
-const allItems: Item[] = [
+const allItems: ItemFlyweight[] = [
   { name: "letter", label: "O", rank: 0 },
   { name: "word", label: "DO", rank: 1 },
   { name: "clause", label: "DO YOU", rank: 2 },
@@ -133,13 +133,13 @@ const playerIcon = leaflet.icon({
 });
 const playerMarker = leaflet.marker(playerPos, { icon: playerIcon });
 playerMarker.addTo(map);
-let playerItem: Item | null = null;
+let playerItem: ItemFlyweight | null = null;
 textDiv.innerHTML = "Empty hand :(";
 
 type Action = (cell: Cell) => void;
 const actions: Record<string, Action> = {
   pickUp: (cell: Cell) => {
-    const item: Item | null = cell.item;
+    const item: ItemFlyweight | null = cell.item;
     playerItem = {
       name: item!.name,
       label: item!.label,
@@ -177,7 +177,7 @@ const actions: Record<string, Action> = {
 
 function spawn(lat: number, lng: number) {
   const value = Math.floor(luck([lat, lng, "initialValue"].toString()) * 5);
-  const item: Item = {
+  const item: ItemFlyweight = {
     name: allItems[value].name,
     label: allItems[value].label,
     rank: value,
@@ -308,7 +308,7 @@ function createMarker(
   location: leaflet.LatLng,
   opacity: number,
   interactive: boolean,
-  item: Item,
+  item: ItemFlyweight,
 ) {
   const marker = leaflet.circle(location, {
     radius: 5,

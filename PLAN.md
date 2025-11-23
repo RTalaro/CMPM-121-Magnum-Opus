@@ -76,3 +76,14 @@ I hope that the player can craft their own narrative by exploring, and feel insp
 - [x] implement Flyweight-similar design pattern
 - [x] implement state preservation + restoration
 - [ ] refactor + cleanup
+
+### D4.d Gameplay Across Real-world Space and Time
+
+#### D4.d Steps
+
+- [ ] use browser's geolocation API for player movement
+- [ ] use Facade design pattern to implement new controls behind interface
+- [ ] use browser's localStorage API to save game state across page loads
+- [ ] allow player to switch between button movement + location-based movement
+- [ ] allow player to start new game
+- [ ] refactor + cleanup

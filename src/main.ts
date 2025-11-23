@@ -35,8 +35,6 @@ const allButtons: direction[] = [
   { name: "right", label: "➡" },
 ];
 for (const direction of allButtons) {
-  console.log(direction);
-  console.log(direction.label, typeof direction);
   const button = document.createElement("button");
   button.textContent = direction.label;
   document.body.append(button);
@@ -151,6 +149,7 @@ const actions: Record<string, Action> = {
     playerItem = allItems[item.rank];
     cell.item = null;
     cell.tooltip.setOpacity(0);
+    console.log("items:", allItems);
   },
   placeDown: (cell: Cell) => {
     const tooltip = cell.tooltip;
@@ -162,12 +161,14 @@ const actions: Record<string, Action> = {
       } <br> (${cell.location.lat}, ${cell.location.lng})`,
     );
     playerItem = null;
+    console.log("items:", allItems);
   },
   craft: (cell: Cell) => {
     cell.tooltip.setOpacity(0);
     const rank = playerItem!.rank + 1;
     playerItem = allItems[rank];
     cell.item = null;
+    console.log("items:", allItems);
   },
 };
 
@@ -332,9 +333,9 @@ function updateCellVisibility(cell: Cell) {
 
 function onCellClick(cell: Cell) {
   cell.marker.addEventListener("click", () => {
-    if (playerItem == null) actions.pickUp(cell);
+    if (playerItem == null && cell.item != null) actions.pickUp(cell);
     else if (cell.item == null) actions.placeDown(cell);
-    else if (playerItem.rank == cell.item.rank) actions.craft(cell);
+    else if (playerItem!.rank == cell.item.rank) actions.craft(cell);
     updateText();
   });
 }

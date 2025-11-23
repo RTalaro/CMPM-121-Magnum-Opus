@@ -73,6 +73,6 @@ I hope that the player can craft their own narrative by exploring, and feel insp
 
 - [x] save cells that have been modified
 - [x] free cells that are out of view and have not been modified
-- [ ] implement Flyweight design pattern
-- [ ] implement Memento design pattern
+- [x] implement Flyweight-similar design pattern
+- [x] implement state preservation + restoration
 - [ ] refactor + cleanup

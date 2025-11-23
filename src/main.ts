@@ -99,20 +99,23 @@ leaflet
 
 // DATA TYPES AND GAME STATE
 
-interface ItemFlyweight {
+// define intrinsic state
+interface ItemType {
   name: string;
   label: string;
   rank: number;
 }
 
+// save memory by referencing shared itemType instances instead of copying data
 interface Cell {
-  item: ItemFlyweight | null;
+  item: ItemType | null;
   location: leaflet.LatLng;
   marker: leaflet.Circle;
   tooltip: Tooltip;
 }
 
-const allItems: ItemFlyweight[] = [
+// define flyweight pool
+const allItems: ItemType[] = [
   { name: "letter", label: "O", rank: 0 },
   { name: "word", label: "DO", rank: 1 },
   { name: "clause", label: "DO YOU", rank: 2 },
@@ -133,28 +136,20 @@ const playerIcon = leaflet.icon({
 });
 const playerMarker = leaflet.marker(playerPos, { icon: playerIcon });
 playerMarker.addTo(map);
-let playerItem: ItemFlyweight | null = null;
+let playerItem: ItemType | null = null;
 textDiv.innerHTML = "Empty hand :(";
 
 type Action = (cell: Cell) => void;
 const actions: Record<string, Action> = {
   pickUp: (cell: Cell) => {
-    const item: ItemFlyweight | null = cell.item;
-    playerItem = {
-      name: item!.name,
-      label: item!.label,
-      rank: item!.rank,
-    };
+    const item: ItemType = cell.item!;
+    playerItem = allItems[item.rank];
     cell.item = null;
     cell.tooltip.setOpacity(0);
   },
   placeDown: (cell: Cell) => {
     const tooltip = cell.tooltip;
-    cell.item = {
-      name: playerItem!.name,
-      label: playerItem!.label,
-      rank: playerItem!.rank,
-    };
+    cell.item = allItems[playerItem!.rank];
     tooltip.setOpacity(0.9);
     tooltip.setContent(
       `${
@@ -166,22 +161,15 @@ const actions: Record<string, Action> = {
   craft: (cell: Cell) => {
     cell.tooltip.setOpacity(0);
     const rank = playerItem!.rank + 1;
-    playerItem = {
-      name: allItems[rank].name,
-      label: allItems[rank].label,
-      rank: rank,
-    };
+    playerItem = allItems[rank];
     cell.item = null;
   },
 };
 
+// save memory by returning reference to itemType instead of instancing new item
 function spawn(lat: number, lng: number) {
   const value = Math.floor(luck([lat, lng, "initialValue"].toString()) * 5);
-  const item: ItemFlyweight = {
-    name: allItems[value].name,
-    label: allItems[value].label,
-    rank: value,
-  };
+  const item: ItemType = allItems[value];
   return item;
 }
 
@@ -208,6 +196,7 @@ map.addEventListener("moveend", () => {
 function killOldCells() {
   for (const cell of visibleCells) {
     if (isOffMap(cell.location)) {
+      // direct mutation to cellGrid to preserve and restore modified cell states
       if (!isModified(cell)) {
         visibleCells = visibleCells.filter((item) => item !== cell);
       }
@@ -308,7 +297,7 @@ function createMarker(
   location: leaflet.LatLng,
   opacity: number,
   interactive: boolean,
-  item: ItemFlyweight,
+  item: ItemType,
 ) {
   const marker = leaflet.circle(location, {
     radius: 5,

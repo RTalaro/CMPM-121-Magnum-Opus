@@ -334,8 +334,10 @@ function updateCellVisibility(cell: Cell) {
 function onCellClick(cell: Cell) {
   cell.marker.addEventListener("click", () => {
     if (playerItem == null && cell.item != null) actions.pickUp(cell);
-    else if (cell.item == null) actions.placeDown(cell);
-    else if (playerItem!.rank == cell.item.rank) actions.craft(cell);
+    else if (playerItem != null && cell.item == null) actions.placeDown(cell);
+    else if (playerItem && cell.item && playerItem.rank == cell.item.rank) {
+      actions.craft(cell);
+    }
     updateText();
   });
 }

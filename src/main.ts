@@ -220,14 +220,14 @@ function killOldCells() {
 }
 
 function isModified(cell: Cell) {
-  if (cell.item == null) return false;
+  if (cell.item == null) return true;
   const origRank: number = Math.floor(
     luck(
       [cell.location.lat, cell.location.lng, "initialValue"].toString(),
     ) * 5,
   );
   const currRank: number = cell.item!.rank;
-  return origRank == currRank;
+  return (origRank != currRank);
 }
 
 const cellGrid = leaflet.layerGroup();

@@ -20,9 +20,6 @@ document.body.append(textDiv);
 
 const upDiv = document.createElement("div");
 document.body.append(upDiv);
-const up = document.createElement("button");
-up.id = "up";
-up.textContent = "⬆";
 
 const left = document.createElement("button");
 left.id = "left";
@@ -36,15 +33,25 @@ right.textContent = "➡";
 
 const latMov = 0.00017137304;
 const lngMov = 0.00021457672;
-const allButtons: HTMLButtonElement[] = [up, left, down, right];
-for (const button of allButtons) {
+const allButtons = {
+  up: "⬆",
+  left: "⬅",
+  down: "⬇︎",
+  right: "➡",
+};
+console.log(allButtons["up"]);
+for (const direction in allButtons) {
+  console.log(direction, typeof(direction));
+  const button = document.createElement("button");
+  button.id = direction;
+  button.textContent = allButtons[direction];
   document.body.append(button);
-  if (button.id == "up") {
+  if (direction == "up") {
     const buttonsDiv = document.createElement("div");
     document.body.append(buttonsDiv);
   }
   button.addEventListener("click", () => {
-    switch (button.id) {
+    switch (direction) {
       case "up":
         playerPos.lat += latMov;
         break;

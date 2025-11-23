@@ -18,55 +18,52 @@ const textDiv = document.createElement("div");
 textDiv.id = "text";
 document.body.append(textDiv);
 
-const buttonsDiv = document.createElement("div");
-document.body.append(buttonsDiv);
+const upDiv = document.createElement("div");
+document.body.append(upDiv);
+const up = document.createElement("button");
+up.id = "up";
+up.textContent = "⬆";
+
+const left = document.createElement("button");
+left.id = "left";
+left.textContent = "⬅";
+const down = document.createElement("button");
+down.id = "down";
+down.textContent = "⬇︎";
+const right = document.createElement("button");
+right.id = "right";
+right.textContent = "➡";
 
 const latMov = 0.00017137304;
 const lngMov = 0.00021457672;
-interface direction {
-  name: string;
-  label: string;
-}
-
-const allButtons: direction[] = [
-  { name: "up", label: "⬆" },
-  { name: "left", label: "⬅" },
-  { name: "down", label: "⬇︎" },
-  { name: "right", label: "➡" },
-];
-for (const direction of allButtons) {
-  const button = document.createElement("button");
-  button.textContent = direction.label;
+const allButtons: HTMLButtonElement[] = [up, left, down, right];
+for (const button of allButtons) {
   document.body.append(button);
-  if (direction.name == "up") {
-    const upDiv = document.createElement("div");
-    document.body.append(upDiv);
+  if (button.id == "up") {
+    const buttonsDiv = document.createElement("div");
+    document.body.append(buttonsDiv);
   }
   button.addEventListener("click", () => {
-    handleMov(direction);
+    switch (button.id) {
+      case "up":
+        playerPos.lat += latMov;
+        break;
+      case "down":
+        playerPos.lat -= latMov;
+        break;
+      case "left":
+        playerPos.lng -= lngMov;
+        break;
+      case "right":
+        playerPos.lng += lngMov;
+        break;
+      default:
+        return;
+    }
+    playerMarker.setLatLng(playerPos);
+    map.setView(playerPos);
+    displayCells();
   });
-}
-
-function handleMov(direction: direction) {
-  switch (direction.name) {
-    case "up":
-      playerPos.lat += latMov;
-      break;
-    case "down":
-      playerPos.lat -= latMov;
-      break;
-    case "left":
-      playerPos.lng -= lngMov;
-      break;
-    case "right":
-      playerPos.lng += lngMov;
-      break;
-    default:
-      return;
-  }
-  playerMarker.setLatLng(playerPos);
-  map.setView(playerPos);
-  displayCells();
 }
 
 const origin = leaflet.latLng(0, 0);
@@ -102,23 +99,20 @@ leaflet
 
 // DATA TYPES AND GAME STATE
 
-// define intrinsic state
-interface ItemType {
+interface Item {
   name: string;
   label: string;
   rank: number;
 }
 
-// save memory by referencing shared itemType instances instead of copying data
 interface Cell {
-  item: ItemType | null;
+  item: Item | null;
   location: leaflet.LatLng;
   marker: leaflet.Circle;
   tooltip: Tooltip;
 }
 
-// define flyweight pool
-const allItems: ItemType[] = [
+const allItems: Item[] = [
   { name: "letter", label: "O", rank: 0 },
   { name: "word", label: "DO", rank: 1 },
   { name: "clause", label: "DO YOU", rank: 2 },
@@ -131,7 +125,7 @@ const allItems: ItemType[] = [
 
 let visibleCells: Cell[] = [];
 
-const FINAL_ITEM: string = "paper";
+const FINAL_ITEM: string = "series";
 let playerPos: leaflet.LatLng = start_pos;
 const playerIcon = leaflet.icon({
   iconUrl: faceImg,
@@ -139,21 +133,28 @@ const playerIcon = leaflet.icon({
 });
 const playerMarker = leaflet.marker(playerPos, { icon: playerIcon });
 playerMarker.addTo(map);
-let playerItem: ItemType | null = null;
+let playerItem: Item | null = null;
 textDiv.innerHTML = "Empty hand :(";
 
 type Action = (cell: Cell) => void;
 const actions: Record<string, Action> = {
   pickUp: (cell: Cell) => {
-    const item: ItemType = cell.item!;
-    playerItem = allItems[item.rank];
+    const item: Item | null = cell.item;
+    playerItem = {
+      name: item!.name,
+      label: item!.label,
+      rank: item!.rank,
+    };
     cell.item = null;
     cell.tooltip.setOpacity(0);
-    console.log("items:", allItems);
   },
   placeDown: (cell: Cell) => {
     const tooltip = cell.tooltip;
-    cell.item = allItems[playerItem!.rank];
+    cell.item = {
+      name: playerItem!.name,
+      label: playerItem!.label,
+      rank: playerItem!.rank,
+    };
     tooltip.setOpacity(0.9);
     tooltip.setContent(
       `${
@@ -161,21 +162,26 @@ const actions: Record<string, Action> = {
       } <br> (${cell.location.lat}, ${cell.location.lng})`,
     );
     playerItem = null;
-    console.log("items:", allItems);
   },
   craft: (cell: Cell) => {
     cell.tooltip.setOpacity(0);
     const rank = playerItem!.rank + 1;
-    playerItem = allItems[rank];
+    playerItem = {
+      name: allItems[rank].name,
+      label: allItems[rank].label,
+      rank: rank,
+    };
     cell.item = null;
-    console.log("items:", allItems);
   },
 };
 
-// save memory by returning reference to itemType instead of instancing new item
 function spawn(lat: number, lng: number) {
-  const value = Math.floor(luck([lat, lng, "initialValue"].toString()) * 5);
-  const item: ItemType = allItems[value];
+  const value = Math.floor(luck([lat, lng, "initialValue"].toString()) * 8);
+  const item: Item = {
+    name: allItems[value].name,
+    label: allItems[value].label,
+    rank: value,
+  };
   return item;
 }
 
@@ -202,7 +208,6 @@ map.addEventListener("moveend", () => {
 function killOldCells() {
   for (const cell of visibleCells) {
     if (isOffMap(cell.location)) {
-      // direct mutation to cellGrid to preserve and restore modified cell states
       if (!isModified(cell)) {
         visibleCells = visibleCells.filter((item) => item !== cell);
       }
@@ -303,7 +308,7 @@ function createMarker(
   location: leaflet.LatLng,
   opacity: number,
   interactive: boolean,
-  item: ItemType,
+  item: Item,
 ) {
   const marker = leaflet.circle(location, {
     radius: 5,
@@ -333,11 +338,9 @@ function updateCellVisibility(cell: Cell) {
 
 function onCellClick(cell: Cell) {
   cell.marker.addEventListener("click", () => {
-    if (playerItem == null && cell.item != null) actions.pickUp(cell);
-    else if (playerItem != null && cell.item == null) actions.placeDown(cell);
-    else if (playerItem && cell.item && playerItem.rank == cell.item.rank) {
-      actions.craft(cell);
-    }
+    if (playerItem == null) actions.pickUp(cell);
+    else if (cell.item == null) actions.placeDown(cell);
+    else if (playerItem.rank == cell.item.rank) actions.craft(cell);
     updateText();
   });
 }

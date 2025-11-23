@@ -75,7 +75,7 @@ I hope that the player can craft their own narrative by exploring, and feel insp
 - [x] free cells that are out of view and have not been modified
 - [x] implement Flyweight-similar design pattern
 - [x] implement state preservation + restoration
-- [ ] refactor + cleanup
+- [x] refactor + cleanup
 
 ### D4.d Gameplay Across Real-world Space and Time
 

@@ -50,22 +50,22 @@ for (const direction of allButtons) {
 function handleMov(direction: direction) {
   switch (direction.name) {
     case "up":
-      playerPos.lat += latMov;
+      player.pos.lat += latMov;
       break;
     case "down":
-      playerPos.lat -= latMov;
+      player.pos.lat -= latMov;
       break;
     case "left":
-      playerPos.lng -= lngMov;
+      player.pos.lng -= lngMov;
       break;
     case "right":
-      playerPos.lng += lngMov;
+      player.pos.lng += lngMov;
       break;
     default:
       return;
   }
-  playerMarker.setLatLng(playerPos);
-  map.setView(playerPos);
+  player.marker.setLatLng(player.pos);
+  map.setView(player.pos);
   displayCells();
 }
 
@@ -117,6 +117,12 @@ interface Cell {
   tooltip: Tooltip;
 }
 
+interface Player {
+  pos: leaflet.LatLng;
+  item: ItemType | null;
+  marker: leaflet.Marker;
+}
+
 // define flyweight pool
 const allItems: ItemType[] = [
   { name: "letter", label: "O", rank: 0 },
@@ -132,41 +138,48 @@ const allItems: ItemType[] = [
 let visibleCells: Cell[] = [];
 
 const FINAL_ITEM: string = "paper";
-let playerPos: leaflet.LatLng = start_pos;
+
+const playerPos: leaflet.LatLng = localStorage.getItem("player.pos")
+  ? JSON.parse(localStorage.getItem("player.pos")!)
+  : start_pos;
 const playerIcon = leaflet.icon({
   iconUrl: faceImg,
   iconSize: [78.3, 49.2], // 10% of original img size
 });
-const playerMarker = leaflet.marker(playerPos, { icon: playerIcon });
-playerMarker.addTo(map);
-let playerItem: ItemType | null = null;
 textDiv.innerHTML = "Empty hand :(";
+
+const player: Player = {
+  pos: playerPos,
+  item: null,
+  marker: leaflet.marker(playerPos, { icon: playerIcon }),
+};
+player.marker.addTo(map);
 
 type Action = (cell: Cell) => void;
 const actions: Record<string, Action> = {
   pickUp: (cell: Cell) => {
     const item: ItemType = cell.item!;
-    playerItem = allItems[item.rank];
+    player.item = allItems[item.rank];
     cell.item = null;
     cell.tooltip.setOpacity(0);
     console.log("items:", allItems);
   },
   placeDown: (cell: Cell) => {
     const tooltip = cell.tooltip;
-    cell.item = allItems[playerItem!.rank];
+    cell.item = allItems[player.item!.rank];
     tooltip.setOpacity(0.9);
     tooltip.setContent(
       `${
         allItems[cell.item.rank].label
       } <br> (${cell.location.lat}, ${cell.location.lng})`,
     );
-    playerItem = null;
+    player.item = null;
     console.log("items:", allItems);
   },
   craft: (cell: Cell) => {
     cell.tooltip.setOpacity(0);
-    const rank = playerItem!.rank + 1;
-    playerItem = allItems[rank];
+    const rank = player.item!.rank + 1;
+    player.item = allItems[rank];
     cell.item = null;
     console.log("items:", allItems);
   },
@@ -180,12 +193,12 @@ function spawn(lat: number, lng: number) {
 }
 
 function updateText() {
-  if (playerItem != null) {
-    textDiv.innerHTML = `Holding ${playerItem.name} ${
-      allItems[playerItem.rank].label
+  if (player.item != null) {
+    textDiv.innerHTML = `Holding ${player.item.name} ${
+      allItems[player.item.rank].label
     }`;
-    if (playerItem.name == FINAL_ITEM) {
-      textDiv.innerHTML = `You wrote a ${allItems[playerItem.rank].label}!!`;
+    if (player.item.name == FINAL_ITEM) {
+      textDiv.innerHTML = `You wrote a ${allItems[player.item.rank].label}!!`;
     }
   } else textDiv.innerHTML = "Empty hands :(";
 }
@@ -193,8 +206,8 @@ function updateText() {
 // spawn and display cells
 
 map.addEventListener("moveend", () => {
-  playerPos = map.getCenter();
-  playerMarker.setLatLng(playerPos);
+  player.pos = map.getCenter();
+  player.marker.setLatLng(player.pos);
   killOldCells();
   displayCells();
 });
@@ -207,7 +220,9 @@ function killOldCells() {
         visibleCells = visibleCells.filter((item) => item !== cell);
       }
       cell.marker.removeFrom(map);
-    } else if (map.distance(cell.location, playerPos) * .00001 > PLAYER_REACH) {
+    } else if (
+      map.distance(cell.location, player.pos) * .00001 > PLAYER_REACH
+    ) {
       cell.marker.setStyle({ opacity: .5, interactive: false });
       cell.marker.redraw();
     } else {
@@ -266,7 +281,7 @@ function displayCells() {
         }
       }
       if (!cont) continue;
-      else if (map.distance(location, playerPos) * .00001 > PLAYER_REACH) {
+      else if (map.distance(location, player.pos) * .00001 > PLAYER_REACH) {
         opacity = .5;
         interactive = false;
       }
@@ -333,9 +348,9 @@ function updateCellVisibility(cell: Cell) {
 
 function onCellClick(cell: Cell) {
   cell.marker.addEventListener("click", () => {
-    if (playerItem == null && cell.item != null) actions.pickUp(cell);
-    else if (playerItem != null && cell.item == null) actions.placeDown(cell);
-    else if (playerItem && cell.item && playerItem.rank == cell.item.rank) {
+    if (player.item == null && cell.item != null) actions.pickUp(cell);
+    else if (player.item != null && cell.item == null) actions.placeDown(cell);
+    else if (player.item && cell.item && player.item.rank == cell.item.rank) {
       actions.craft(cell);
     }
     updateText();

@@ -139,9 +139,12 @@ let visibleCells: Cell[] = [];
 
 const FINAL_ITEM: string = "paper";
 
-const playerPos: leaflet.LatLng = localStorage.getItem("player.pos")
-  ? JSON.parse(localStorage.getItem("player.pos")!)
+const playerPos: leaflet.LatLng = localStorage.getItem("player")
+  ? JSON.parse(localStorage.getItem("playerPos")!).pos
   : start_pos;
+const playerItem: ItemType = localStorage.getItem("player")
+  ? JSON.parse(localStorage.getItem("playerItem")!).item
+  : null;
 const playerIcon = leaflet.icon({
   iconUrl: faceImg,
   iconSize: [78.3, 49.2], // 10% of original img size
@@ -150,7 +153,7 @@ textDiv.innerHTML = "Empty hand :(";
 
 const player: Player = {
   pos: playerPos,
-  item: null,
+  item: playerItem,
   marker: leaflet.marker(playerPos, { icon: playerIcon }),
 };
 player.marker.addTo(map);
